@@ -70,3 +70,6 @@ local.properties
 
 # Code Recommenders
 .recommenders/
+
+.project
+.classpath
