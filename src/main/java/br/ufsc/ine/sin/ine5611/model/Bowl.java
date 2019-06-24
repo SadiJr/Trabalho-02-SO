@@ -1,21 +1,29 @@
-package br.ufsc.ine.sin.ine5611;
+package br.ufsc.ine.sin.ine5611.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 public class Bowl {
+	private static final Logger LOGGER = LogManager.getLogger(Bowl.class);
+	
+	private int id;
 	private int coins;
 	private boolean existAwakeDog;
 	private List<Bowl> next;
 	private List<Dog> sleepingDogs;
 	
-	public Bowl() {
+	public Bowl(int id) {
+		this.id = id;
 		this.coins = 4;
 		this.next = new ArrayList<>();
 		this.sleepingDogs = new ArrayList<>();
 	}
 	
 	public void addCoin() {
+		LOGGER.info("Adding a coin in bowl " + id);
 		this.coins += 1;
 	}
 	

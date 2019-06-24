@@ -1,10 +1,13 @@
-package br.ufsc.ine.sin.ine5611;
+package br.ufsc.ine.sin.ine5611.model;
 
-public abstract class Dog implements Runnable {
+import br.ufsc.ine.sin.ine5611.enums.Color;
+
+public abstract class Dog extends Thread {
 	
 	private Color color;
 	
 	public Dog(Color color) {
+		super();
 		this.color = color;
 	}
 	

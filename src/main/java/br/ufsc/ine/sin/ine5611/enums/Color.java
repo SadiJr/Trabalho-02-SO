@@ -1,4 +1,4 @@
-package br.ufsc.ine.sin.ine5611;
+package br.ufsc.ine.sin.ine5611.enums;
 
 public enum Color {
 	RED("Red"), BLUE("Blue"), GREEN("Green"), YELLOW("Yellow");

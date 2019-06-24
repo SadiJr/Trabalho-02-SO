@@ -1,9 +1,11 @@
-package br.ufsc.ine.sin.ine5611;
+package br.ufsc.ine.sin.ine5611.model;
 
 import java.util.List;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+
+import br.ufsc.ine.sin.ine5611.controller.Controller;
 
 public class Grove {
 	private static final Logger LOGGER = LogManager.getLogger(Grove.class);
@@ -19,7 +21,7 @@ public class Grove {
 
 		setBowls(new Bowl[20]);
 		for (int i = 0; i < 20; i++) {
-			getBowls()[i] = new Bowl();
+			getBowls()[i] = new Bowl(i+1);
 		}
 		setBowlsRelationship();
 
@@ -129,8 +131,9 @@ public class Grove {
 				if (!getBowls()[randomBowl].isExistAwakeDog()) {
 					dog.setBowl(getBowls()[randomBowl]);
 
-					if (dog.getBowl().getCoins() == 0) {
-						dog.wait();
+					synchronized (dog) {
+						if (dog.getBowl().getCoins() == 0)
+							dog.wait();						
 					}
 					pickCoins(dog);
 

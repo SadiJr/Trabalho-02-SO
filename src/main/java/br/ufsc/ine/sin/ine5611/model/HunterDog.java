@@ -1,4 +1,7 @@
-package br.ufsc.ine.sin.ine5611;
+package br.ufsc.ine.sin.ine5611.model;
+
+import br.ufsc.ine.sin.ine5611.controller.Controller;
+import br.ufsc.ine.sin.ine5611.enums.Color;
 
 public class HunterDog extends Dog {
 	private Bowl bowl;
