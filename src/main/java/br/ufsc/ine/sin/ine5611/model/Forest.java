@@ -10,6 +10,7 @@ public class Forest {
 
 	public Forest() {
 		LOGGER.info("Criando nodos da floresta");
+		nodes = new Node[20];
 		for (int i = 0; i < 20; i++) {
 			nodes[i] = new Node(i + 1);
 		}
@@ -128,10 +129,13 @@ public class Forest {
 				break;
 			}
 		}
-		
 	}
 
 	public Node[] getNodes() {
 		return nodes;
+	}
+
+	public Node getFirstNode() {
+		return nodes[0];
 	}
 }
