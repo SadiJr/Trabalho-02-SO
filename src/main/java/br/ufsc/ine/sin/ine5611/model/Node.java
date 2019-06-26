@@ -24,11 +24,11 @@ public class Node {
 		return id;
 	}
 
-	public List<DogThread> getSleepingDogs() {
+	public synchronized List<DogThread> getSleepingDogs() {
 		return sleepingDogs;
 	}
 
-	public void addSleepingDog(DogThread dog) {
+	public synchronized void addSleepingDog(DogThread dog) {
 		sleepingDogs.add(dog);
 	}
 
@@ -36,7 +36,7 @@ public class Node {
 		return !sleepingDogs.isEmpty();
 	}
 
-	public boolean existCoins() {
+	public synchronized boolean existCoins() {
 		return coins > 0;
 	}
 
@@ -51,11 +51,11 @@ public class Node {
 		return quantity;
 	}
 
-	public boolean isDogOnNode() {
+	public synchronized boolean isDogOnNode() {
 		return dogOnNode;
 	}
 
-	public void setDogOnNode(boolean dogOnNode) {
+	public synchronized void setDogOnNode(boolean dogOnNode) {
 		this.dogOnNode = dogOnNode;
 	}
 
@@ -70,6 +70,6 @@ public class Node {
 	@SuppressWarnings("deprecation")
 	public synchronized void addCoin() {
 		coins += 1;
-		sleepingDogs.forEach(d -> d.resume());
+		sleepingDogs.forEach(d -> d.interrupt());
 	}
 }

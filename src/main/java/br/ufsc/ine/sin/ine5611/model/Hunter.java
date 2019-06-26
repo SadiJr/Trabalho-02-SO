@@ -15,10 +15,10 @@ public class Hunter {
 	private DogThread runningDog;
 	private String basicMessage;
 
-	public Hunter(Color color) {
+	public Hunter(Color color, Forest forest) {
 		this.color = color;
-		dogs[0] = new DogThread(1, color, this);
-		dogs[1] = new DogThread(2, color, this);
+		dogs[0] = new DogThread(1, color, this, forest);
+		dogs[1] = new DogThread(2, color, this, forest);
 		runningDog = dogs[0];
 		basicMessage = "Cão " + color.name() + " " + runningDog.getId();
 	}
@@ -29,12 +29,10 @@ public class Hunter {
 		coins += runningDog.getCoins();
 		runningDog.setCoins(0);
 		if(dogs[0].equals(runningDog)) {
-			dogs[1].setFirstNode(true);
 			dogs[1].start();
 			runningDog = dogs[1];
 			LOGGER.info(basicMessage + " entrando no bosque");
 		} else {
-			dogs[0].setFirstNode(true);
 			dogs[0].start();
 			runningDog = dogs[0];
 			LOGGER.info(basicMessage + " entrando no bosque");

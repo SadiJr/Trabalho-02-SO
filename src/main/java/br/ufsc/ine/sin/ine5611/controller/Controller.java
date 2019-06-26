@@ -1,8 +1,5 @@
 package br.ufsc.ine.sin.ine5611.controller;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -21,11 +18,11 @@ public class Controller {
 		LOGGER.info("Iniciando floresta e caçadores");
 		
 
-		hunters[0] = new Hunter(Color.BLUE);
-		hunters[1] = new Hunter(Color.GREEN);
-		hunters[2] = new Hunter(Color.YELLOW);
-
 		Forest forest = new Forest();
+		hunters[0] = new Hunter(Color.BLUE, forest);
+		hunters[1] = new Hunter(Color.GREEN, forest);
+		hunters[2] = new Hunter(Color.YELLOW, forest);
+
 
 		HelperThread helperThread = new HelperThread(forest);
 
@@ -34,11 +31,10 @@ public class Controller {
 		}
 		
 
-		ExecutorService executor = Executors.newFixedThreadPool(5);
 		for (Hunter hunter : hunters) {
-			executor.execute(hunter.getRunningDog());
+			hunter.getRunningDog().start();
 		}
-		executor.execute(helperThread);
+		helperThread.start();
 
 		Runnable r = () -> {
 			while(!winner) {

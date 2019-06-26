@@ -20,13 +20,7 @@ public class HelperThread extends Thread implements Runnable {
 	public void run() {
 		LOGGER.info("Iniciando verificação de potes vazios");
 		while (!Thread.currentThread().isInterrupted()) {
-			for (Node node : forest.getNodes()) {
-				LOGGER.info("Verificando pote " + node.getId());
-				if (!node.existCoins()) {
-					LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
-					node.addCoin();
-				}
-			}
+			forest.addCoinsToNode();
 			try {
 				sleep(2000);
 			} catch (InterruptedException e) {
