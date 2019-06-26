@@ -67,7 +67,9 @@ public class Node {
 		nexts.add(node);
 	}
 
+	@SuppressWarnings("deprecation")
 	public synchronized void addCoin() {
 		coins += 1;
+		sleepingDogs.forEach(d -> d.resume());
 	}
 }

@@ -18,24 +18,20 @@ public class HelperThread extends Thread implements Runnable {
 
 	@Override
 	public void run() {
+		LOGGER.info("Iniciando verificação de potes vazios");
 		while (!Thread.currentThread().isInterrupted()) {
-			LOGGER.info("Iniciando verificação de potes vazios");
 			for (Node node : forest.getNodes()) {
+				LOGGER.info("Verificando pote " + node.getId());
 				if (!node.existCoins()) {
 					LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
 					node.addCoin();
 				}
-
-				if (node.verifyExistsSleepingDogs()) {
-					node.getSleepingDogs().forEach(DogThread::start);
-					notifyAll();
-				}
-				try {
-					sleep(200);
-				} catch (InterruptedException e) {
-					LOGGER.error(e, e);
-					Thread.currentThread().interrupt();
-				}
+			}
+			try {
+				sleep(2000);
+			} catch (InterruptedException e) {
+				LOGGER.error(e, e);
+				Thread.currentThread().interrupt();
 			}
 		}
 	}

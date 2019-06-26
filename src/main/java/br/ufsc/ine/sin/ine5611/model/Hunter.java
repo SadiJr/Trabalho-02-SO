@@ -27,9 +27,10 @@ public class Hunter {
 		LOGGER.info(basicMessage + " entregando moedas ao dono");
 		runningDog.interrupt();
 		coins += runningDog.getCoins();
+		runningDog.setCoins(0);
 		if(dogs[0].equals(runningDog)) {
 			dogs[1].setFirstNode(true);
-			dogs[1].run();
+			dogs[1].start();
 			runningDog = dogs[1];
 			LOGGER.info(basicMessage + " entrando no bosque");
 		} else {

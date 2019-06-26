@@ -131,7 +131,7 @@ public class Forest {
 		}
 	}
 
-	public Node[] getNodes() {
+	public synchronized Node[] getNodes() {
 		return nodes;
 	}
 

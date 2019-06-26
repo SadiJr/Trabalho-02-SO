@@ -40,11 +40,11 @@ public class DogThread extends Thread implements Runnable {
 	}
 
 	public void addCoins(int quantity) {
-		LOGGER.info(basicMessage + " encontrou " + quantity + " no pote " + node.getId()); 
+		LOGGER.info(basicMessage + " encontrou " + quantity + " moedas no pote " + node.getId());
 		coins += quantity;
-		if (coins >= 20) {
+		LOGGER.info(basicMessage + " agora possuí " + coins + " moedas");
+		if (coins >= 20)
 			hunter.switchDogs();
-		}
 	}
 
 	@Override
@@ -55,12 +55,10 @@ public class DogThread extends Thread implements Runnable {
 				if (node.existCoins()) {
 					collectCoins();
 					firstNode = false;
-					synchronized (this) {
-						try {
-							wait(100);
-						} catch (InterruptedException e) {
-							LOGGER.error(e, e);
-						}
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						LOGGER.error(e, e);
 					}
 				}
 			} else {
@@ -69,9 +67,8 @@ public class DogThread extends Thread implements Runnable {
 				} else {
 					LOGGER.info(basicMessage + " não encontrou nenhuma moeda no pote " + node.getId());
 					LOGGER.info(basicMessage + " dormindo até ser resgatado pela cão médico");
-
 					try {
-						wait(600);
+						Thread.sleep(600);
 					} catch (InterruptedException e) {
 						LOGGER.error(e, e);
 					}
@@ -80,7 +77,7 @@ public class DogThread extends Thread implements Runnable {
 						LOGGER.info("Após acordar, o " + basicMessage + " ainda não encontrou nenhuma moeda no pote "
 								+ node.getId() + ". Dormindo até ter moedas no pote para coletar");
 						try {
-							wait(300);
+							Thread.sleep(300);
 						} catch (InterruptedException e) {
 							LOGGER.error(e, e);
 						}
@@ -98,19 +95,18 @@ public class DogThread extends Thread implements Runnable {
 
 		if (!Thread.currentThread().isInterrupted()) {
 			LOGGER.info(basicMessage + " dormindo após coletar " + nodeCoins + " moedas no pote " + node.getId());
-			synchronized (this) {
-				try {
-					sleep(100);
-				} catch (InterruptedException e) {
-					LOGGER.error(e, e);
-				}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				LOGGER.error(e, e);
 			}
 			int random = 0;
 			do {
 				random = (int) (Math.random() * node.getNexts().size());
 			} while (node.getNexts().get(random).isDogOnNode());
 			node.getNexts().get(random).setDogOnNode(true);
-			LOGGER.info(basicMessage + " dormindo após saltar do pote " + node.getId() + " para o pote " + random);
+			LOGGER.info(basicMessage + " dormindo após saltar do pote " + node.getId() + " para o pote "
+					+ node.getNexts().get(random).getId());
 			node = node.getNexts().get(random);
 		}
 	}
@@ -125,5 +121,9 @@ public class DogThread extends Thread implements Runnable {
 
 	public void setFirstNode(boolean firstNode) {
 		this.firstNode = firstNode;
+	}
+
+	public void setCoins(int i) {
+		coins = i;
 	}
 }
