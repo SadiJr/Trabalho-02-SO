@@ -2,19 +2,34 @@ package br.ufsc.ine.sin.ine5611.model;
 
 import br.ufsc.ine.sin.ine5611.enums.Color;
 
-public abstract class Dog extends Thread {
+public class Dog {
 	
+	private int id;
 	private Color color;
-	
-	public Dog(Color color) {
-		super();
+	private int coins;
+	private Hunter hunter;
+
+	public Dog(int id, Color color, Hunter hunter) {
+		this.id = id;
 		this.color = color;
+		this.hunter = hunter;
+		coins = 0;
 	}
-	
+
+	public int getId() {
+		return id;
+	}
+
 	public Color getColor() {
 		return color;
 	}
-	public void setColor(Color color) {
-		this.color = color;
+
+	public int getCoins() {
+		return coins;
+	}
+	
+	public void addCoins(int quantity) {
+		coins += quantity;
+		
 	}
 }
