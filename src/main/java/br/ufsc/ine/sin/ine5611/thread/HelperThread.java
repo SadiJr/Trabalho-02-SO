@@ -10,6 +10,7 @@ public class HelperThread extends Thread implements Runnable {
 	private static final Logger LOGGER = LogManager.getLogger(HelperThread.class);
 
 	private Forest forest;
+	private boolean running;
 
 	public HelperThread(Forest forest) {
 		LOGGER.info("Criando thread helper");
@@ -18,9 +19,9 @@ public class HelperThread extends Thread implements Runnable {
 
 	@Override
 	public void run() {
-		LOGGER.info("Iniciando verificação de potes vazios");
-		while (!Thread.currentThread().isInterrupted()) {
+		while (running) {
 			if(forest.lock()) {
+				LOGGER.info("Iniciando verificação de potes vazios");
 				LOGGER.info("Lock with helper thread");
 				forest.addCoinsToNode();
 				forest.unlock();
@@ -33,5 +34,9 @@ public class HelperThread extends Thread implements Runnable {
 		}
 		LOGGER.info("Help Thread Died");
 		forest.unlock();
+	}
+
+	public void setRunning(boolean running) {
+		this.running = running;
 	}
 }

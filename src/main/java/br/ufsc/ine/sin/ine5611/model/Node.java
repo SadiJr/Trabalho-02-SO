@@ -33,6 +33,7 @@ public class Node {
 
 	public synchronized void addSleepingDog(DogThread dog) {
 		sleepingDogs.add(dog);
+		dog.setSleeping(true);
 	}
 
 	public boolean verifyExistsSleepingDogs() {
@@ -54,10 +55,6 @@ public class Node {
 	}
 
 	public synchronized boolean isDogOnNode(DogThread d) {
-		LOGGER.info("Dog in node = " + dog);
-		if(dog != null) {
-			LOGGER.info(getDog().equals(d));
-		}
 		return getDog() == null || getDog().equals(d);
 	}
 

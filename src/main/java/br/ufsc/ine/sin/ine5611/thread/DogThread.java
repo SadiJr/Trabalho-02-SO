@@ -18,13 +18,19 @@ public class DogThread extends Thread implements Runnable {
 	private Node node;
 	private String basicMessage;
 	private Forest forest;
+	private boolean running;
+	private boolean sleeping;
+
+	public void setSleeping(boolean sleeping) {
+		this.sleeping = sleeping;
+	}
 
 	public DogThread(int id, Color color, Hunter hunter, Forest forest) {
 		this.id = id;
 		this.color = color;
 		this.hunter = hunter;
 		coins = 0;
-		basicMessage = "Cão " + color.name() + " " + id;
+		setBasicMessage("Cão " + color.name() + " " + id);
 		this.forest = forest;
 	}
 
@@ -41,11 +47,11 @@ public class DogThread extends Thread implements Runnable {
 	}
 
 	public void addCoins(int quantity) {
-		LOGGER.info(basicMessage + " encontrou " + quantity + " moedas no pote " + node.getId());
+		LOGGER.info(getBasicMessage() + " encontrou " + quantity + " moedas no pote " + node.getId());
 		coins += quantity;
-		LOGGER.info(basicMessage + " agora possuí " + coins + " moedas");
+		LOGGER.info(getBasicMessage() + " agora possuí " + coins + " moedas");
 
-		hunter.verifyWinner();
+		hunter.verifyWinner(node);
 
 		if (coins >= 20) {
 			node.setDog(null);
@@ -55,63 +61,82 @@ public class DogThread extends Thread implements Runnable {
 
 	@Override
 	public void run() {
-			LOGGER.info(basicMessage + " iniciando a caçada!");
-			while (!Thread.currentThread().isInterrupted()) {
-				if (forest.lock()) {
-					LOGGER.info("Lock with the thread " + basicMessage);
-					
-					LOGGER.info("Verifiyng if exists god in node " +node.getId() + " = " +  forest.existsDogOnNode(node, this));
-					if (forest.existsDogOnNode(node, this)) {
-						if (forest.existsCoins(node)) {
-							forest.getCoins(node, this);
+		LOGGER.info(getBasicMessage() + " iniciando a caçada!");
+		while (running) {
+			if (forest.lock()) {
+				LOGGER.info("Lock with the thread " + getBasicMessage());
+
+				LOGGER.info(
+						"Verifiyng if exists god in node " + node.getId() + " = " + forest.existsDogOnNode(node, this));
+				if (forest.existsDogOnNode(node, this)) {
+					if (forest.existsCoins(node)) {
+						forest.getCoins(node, this);
+						if (running) {
 							forest.unlock();
 							try {
 								sleep(100);
 							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-
-							while (!forest.lock());
-							while(!forest.moveDog(node, this)) {
-								forest.unlock();
-								try {
-									sleep(100);
-								} catch (InterruptedException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
+							if (running) {
+								boolean moving = true;
+								while (moving) {
+									if (forest.lock()) {
+										while (!forest.moveDog(node, this)) {
+											forest.unlock();
+											try {
+												sleep(1000);
+											} catch (InterruptedException e) {
+												e.printStackTrace();
+												return;
+											}
+										}
+										moving = false;
+										forest.unlock();
+									} else {
+										forest.unlock();
+										try {
+											sleep(1000);
+										} catch (InterruptedException e) {
+											e.printStackTrace();
+											return;
+										}
+									}
 								}
-								while (!forest.lock());
 							}
 							forest.unlock();
 							try {
 								sleep(100);
 							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						} else {
-							node.setDog(null);
-							node.addSleepingDog(this);
 							forest.unlock();
-							try {
-								sleep(6000);
-							} catch (InterruptedException e) {
-								LOGGER.error(e,e);
-							}
-							hunter.printState();
 						}
 					} else {
+						node.setDog(null);
+						node.addSleepingDog(this);
 						forest.unlock();
 						try {
-							sleep(1000);
+							while (sleeping)
+								sleep(1);
 						} catch (InterruptedException e) {
-							LOGGER.error(e,e);
+							LOGGER.error(e, e);
 						}
+						LOGGER.info(basicMessage + " acordado pela HelperThread.");
+					}
+				} else {
+					forest.unlock();
+					try {
+						sleep(1000);
+					} catch (InterruptedException e) {
+						LOGGER.error(e, e);
+						Thread.currentThread().interrupt();
 					}
 				}
 			}
-			forest.unlock();
+		}
+		forest.unlock();
 	}
 
 	public void setNode(Node node) {
@@ -124,5 +149,21 @@ public class DogThread extends Thread implements Runnable {
 
 	public Hunter getHunter() {
 		return hunter;
+	}
+
+	public boolean isRunning() {
+		return running;
+	}
+
+	public void setRunning(boolean running) {
+		this.running = running;
+	}
+
+	public String getBasicMessage() {
+		return basicMessage;
+	}
+
+	public void setBasicMessage(String basicMessage) {
+		this.basicMessage = basicMessage;
 	}
 }

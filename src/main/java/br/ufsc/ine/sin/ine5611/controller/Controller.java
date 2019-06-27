@@ -31,8 +31,10 @@ public class Controller {
 		}
 
 		for (Hunter hunter : hunters) {
+			hunter.getRunningDog().setRunning(true);
 			hunter.getRunningDog().start();
 		}
+		helperThread.setRunning(true);
 		helperThread.start();
 	}
 
@@ -60,30 +62,29 @@ public class Controller {
 		LOGGER.info("Posições:" + "\n1º Colocado: Caçador " + first.getColor().name() + " com um total de "
 				+ first.getTotalCoins() + " moedas" + "\n2º Colocado: Caçador " + second.getColor().name()
 				+ " com um total de " + second.getTotalCoins() + " moedas" + "\n3º Colocado: Caçador "
-				+ third.getColor().name() + " com um total de " + third.getTotalCoins() + " moedas");
+				+ third.getColor().name() 
+				+ " com um total de " + third.getTotalCoins() + " moedas");
 	}
 
 	public void stopAll(Hunter hunter) {
-		for (Hunter h : hunters) {
-			if (!h.equals(hunter))
-				h.stopDogs();
-		}
-		helperThread.interrupt();
-		hunter.stopDogs();
 		printWinners();
+		for (Hunter h : hunters) {
+			h.stopDogs();
+		}
+		helperThread.setRunning(false);
 	}
 
 	public void printState() {
 		while (!forest.lock());
 		for (Hunter hunter : hunters) {
 			LOGGER.info("Hunter " + hunter.getColor() + " with " + hunter.getCoins() + " coins");
-			LOGGER.info("Running thread " + hunter.getRunningDog().getId() + " with " + hunter.getRunningDog().getCoins() + " coins");
+			LOGGER.info("Running thread " + hunter.getRunningDog().getBasicMessage() + " with " + hunter.getRunningDog().getCoins() + " coins");
 		}
-		LOGGER.info("Helper Thread is running?" + helperThread.isAlive());
+		LOGGER.info("Helper Thread is running? " + helperThread.isAlive());
 
 		Node[] nodes = forest.getNodes();
 		for (Node node : nodes) {
-			LOGGER.info("NOde " + node.getId() + " with " + node.getCoins() + " coins and with dog "
+			LOGGER.info("Node " + node.getId() + " with " + node.getCoins() + " coins and with dog "
 					+ ((node.getDog() == null) ? " null" : (node.getDog().getColor().name() + node.getDog().getId()))
 					+ " and sleeping dogs " + node.getSleepingDogs().size());
 		}

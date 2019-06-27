@@ -15,7 +15,6 @@ public class Hunter {
 	private int coins;
 	private DogThread[] dogs = new DogThread[2];
 	private DogThread runningDog;
-	private String basicMessage;
 	private Forest forest;
 
 	public Hunter(Color color, Forest forest, Controller controller) {
@@ -25,28 +24,28 @@ public class Hunter {
 		dogs[0] = new DogThread(1, color, this, forest);
 		dogs[1] = new DogThread(2, color, this, forest);
 		runningDog = dogs[0];
-		basicMessage = "Cão " + color.name() + " " + runningDog.getId();
 	}
 
 	public void switchDogs() {
-		LOGGER.info(basicMessage + " entregando moedas ao dono");
+		LOGGER.info(runningDog.getBasicMessage() + " entregando moedas ao dono");
 		coins += runningDog.getCoins();
+		
+		LOGGER.info("Caçador " + color.name() + " com um total de " + coins);
 		if (dogs[0].equals(runningDog)) {
-			runningDog.interrupt();
+			runningDog.setRunning(false);
+			runningDog.setSleeping(false);
 			runningDog = dogs[1];
-			LOGGER.info(basicMessage + " entrando no bosque");
-			dogs[1].start();
+			LOGGER.info(runningDog.getBasicMessage() + " entrando no bosque");
+			runningDog.setRunning(true);
+			runningDog.start();
 		} else {
-			runningDog.interrupt();
-			LOGGER.info(basicMessage + " entrando no bosque");
-			if (dogs[0].isAlive()) {
-				dogs[0] = new DogThread(1, color, this, forest);
-				runningDog = dogs[0];
-				runningDog.start();
-			} else {
-				runningDog = dogs[0];
-				runningDog.start();
-			}
+			runningDog.setRunning(false);
+			runningDog.setSleeping(false);
+			runningDog = dogs[0];
+			LOGGER.info(runningDog.getBasicMessage() + " entrando no bosque");
+			runningDog.setRunning(true);
+			runningDog.setSleeping(false);
+			runningDog.run();
 		}
 	}
 
@@ -54,7 +53,7 @@ public class Hunter {
 		return runningDog;
 	}
 
-	public int getTotalCoins() {
+	public synchronized int getTotalCoins() {
 		return coins + runningDog.getCoins();
 	}
 
@@ -73,14 +72,23 @@ public class Hunter {
 		}
 	}
 
-	public void verifyWinner() {
-		if (getTotalCoins() >= 50)
+	public void verifyWinner(Node node) {
+		if (getTotalCoins() >= 50) {
+			node.setDog(null);
 			controller.stopAll(this);
+		}
 	}
 
 	public void stopDogs() {
 		for (DogThread dogThread : dogs) {
-			dogThread.interrupt();
+			dogThread.setRunning(false);
+			dogThread.setSleeping(false);
+			try {
+				dogThread.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

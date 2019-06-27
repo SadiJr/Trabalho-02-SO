@@ -144,6 +144,7 @@ public class Forest {
 	public synchronized void unlock() {
 		if (lock.isHeldByCurrentThread()) {
 			lock.unlock();
+			this.notifyAll();
 		}
 	}
 
@@ -160,23 +161,25 @@ public class Forest {
 		LOGGER.info(basicMessage + " dormindo após ter pegado as moedas");
 	}
 
-	public boolean moveDog(Node node, DogThread dog) {
-		String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
-		LOGGER.info(basicMessage + " acordou após sua soneca depois de pegar moedas");
-		int random = 0;
-		for (int i = 0; i < node.getNexts().size(); i++) {
-			random = (int) (Math.random() * node.getNexts().size());
-			if (node.getNexts().get(random).isDogOnNode(dog)) {
-				node.getNexts().get(random).setDog(dog);
-				node.setDog(null);
-				LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
-						+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
-				dog.setNode(node.getNexts().get(random));
-				node.getNexts().get(random).setDog(dog);
-				return true;
+	public synchronized boolean moveDog(Node node, DogThread dog) {
+		synchronized (lock) {
+			String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
+			LOGGER.info(basicMessage + " acordou após sua soneca depois de pegar moedas");
+			int random = 0;
+			for (int i = 0; i < node.getNexts().size(); i++) {
+				random = (int) (Math.random() * node.getNexts().size());
+				if (node.getNexts().get(random).isDogOnNode(dog)) {
+					node.getNexts().get(random).setDog(dog);
+					node.setDog(null);
+					LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
+							+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
+					dog.setNode(node.getNexts().get(random));
+					node.getNexts().get(random).setDog(dog);
+					return true;
+				}
 			}
+			return false;
 		}
-		return false;
 	}
 
 	public synchronized Node[] getNodes() {
@@ -189,13 +192,17 @@ public class Forest {
 
 	public void addCoinsToNode() {
 		for (Node node : nodes) {
-			LOGGER.info("Verificando pote " + node.getId());
 			if (!node.existCoins()) {
 				LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
 				node.addCoin();
-				
-				if(node.verifyExistsSleepingDogs())
-					node.getSleepingDogs().forEach(DogThread::run);
+
+				if (node.verifyExistsSleepingDogs()) {
+					node.getSleepingDogs().forEach(d -> {
+						LOGGER.info("Helper Thread encontrou cães dormindo no pote " + node.getId());
+						LOGGER.info("Cão dormindo = " + d.getBasicMessage());
+						d.setSleeping(false);
+					});
+				}
 			}
 		}
 	}
