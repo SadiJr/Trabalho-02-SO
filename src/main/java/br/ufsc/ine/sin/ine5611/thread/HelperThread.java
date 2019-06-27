@@ -20,13 +20,18 @@ public class HelperThread extends Thread implements Runnable {
 	public void run() {
 		LOGGER.info("Iniciando verificação de potes vazios");
 		while (!Thread.currentThread().isInterrupted()) {
-			forest.addCoinsToNode();
-			try {
-				sleep(2000);
-			} catch (InterruptedException e) {
-				LOGGER.error(e, e);
-				Thread.currentThread().interrupt();
+			if(forest.lock()) {
+				LOGGER.info("Lock with helper thread");
+				forest.addCoinsToNode();
+				forest.unlock();
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException e) {
+					LOGGER.error(e, e);
+				}
 			}
 		}
+		LOGGER.info("Help Thread Died");
+		forest.unlock();
 	}
 }

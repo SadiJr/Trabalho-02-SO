@@ -1,6 +1,5 @@
 package br.ufsc.ine.sin.ine5611.model;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.LogManager;
@@ -11,7 +10,7 @@ import br.ufsc.ine.sin.ine5611.thread.DogThread;
 public class Forest {
 	private static final Logger LOGGER = LogManager.getLogger(Forest.class);
 
-	Lock lock = new ReentrantLock();
+	ReentrantLock lock = new ReentrantLock();
 
 	private Node[] nodes;
 
@@ -138,38 +137,46 @@ public class Forest {
 		}
 	}
 
-	public synchronized void getCoins(Node node, DogThread dog) {
-		try {
-			lock.lock();
-			if (node.existCoins()) {
-				System.out.println("sadfasdfasdfasdfsf");
-				lock.unlock();
-				dog.sleep(100);
-			} else {
-				node.setDogOnNode(false);
-				lock.unlock();
-				dog.wait(600);
-				
-				while(!node.existCoins()) {
-					dog.wait(300);
-				}
-				dog.addCoins(node.getCoins());
-				
-				int random = 0;
-				do {
-					random = (int) (Math.random() * node.getNexts().size());
-				} while (node.getNexts().get(random).isDogOnNode());
-				node.getNexts().get(random).setDogOnNode(true);
-				LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote " + node.getId() + " para o pote "
-						+ node.getNexts().get(random).getId());
-				dog.setNode(node.getNexts().get(random));
-			}
-		} catch (Exception e) {
-			LOGGER.info(e,e);
-		} finally {
-			if(lock.tryLock())
-				lock.unlock();
+	public synchronized boolean lock() {
+		return lock.tryLock();
+	}
+
+	public synchronized void unlock() {
+		if (lock.isHeldByCurrentThread()) {
+			lock.unlock();
 		}
+	}
+
+	public boolean existsDogOnNode(Node node, DogThread dog) {
+		return node.isDogOnNode(dog);
+	}
+
+	public void getCoins(Node node, DogThread dog) {
+		String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
+		LOGGER.info(basicMessage + " acessou a região crítica!");
+		node.setDog(dog);
+
+		dog.addCoins(node.getCoins());
+		LOGGER.info(basicMessage + " dormindo após ter pegado as moedas");
+	}
+
+	public boolean moveDog(Node node, DogThread dog) {
+		String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
+		LOGGER.info(basicMessage + " acordou após sua soneca depois de pegar moedas");
+		int random = 0;
+		for (int i = 0; i < node.getNexts().size(); i++) {
+			random = (int) (Math.random() * node.getNexts().size());
+			if (node.getNexts().get(random).isDogOnNode(dog)) {
+				node.getNexts().get(random).setDog(dog);
+				node.setDog(null);
+				LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
+						+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
+				dog.setNode(node.getNexts().get(random));
+				node.getNexts().get(random).setDog(dog);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public synchronized Node[] getNodes() {
@@ -181,21 +188,23 @@ public class Forest {
 	}
 
 	public void addCoinsToNode() {
-		try {
-			lock.lock();
-			for (Node node : nodes) {
-				LOGGER.info("Verificando pote " + node.getId());
-				if (!node.existCoins()) {
-					LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
-					node.addCoin();
-				}
+		for (Node node : nodes) {
+			LOGGER.info("Verificando pote " + node.getId());
+			if (!node.existCoins()) {
+				LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
+				node.addCoin();
+				
+				if(node.verifyExistsSleepingDogs())
+					node.getSleepingDogs().forEach(DogThread::run);
 			}
-		} catch (Exception e) {
-			// TODO: handle exception
-		} finally {
-			lock.unlock();
 		}
-		// TODO Auto-generated method stub
-		
+	}
+
+	public boolean existsCoins(Node node) {
+		return node.existCoins();
+	}
+
+	public boolean verifyLock() {
+		return lock.isLocked();
 	}
 }

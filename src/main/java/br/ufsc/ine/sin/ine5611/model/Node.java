@@ -3,19 +3,22 @@ package br.ufsc.ine.sin.ine5611.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import br.ufsc.ine.sin.ine5611.thread.DogThread;
 
 public class Node {
+	private static final Logger LOGGER = LogManager.getLogger(Node.class);
 	private int id;
 	private int coins;
-	private boolean dogOnNode;
 	private List<DogThread> sleepingDogs;
 	private List<Node> nexts;
+	private DogThread dog;
 
 	public Node(int id) {
 		this.id = id;
 		coins = 4;
-		setDogOnNode(false);
 		sleepingDogs = new ArrayList<>();
 		nexts = new ArrayList<>();
 	}
@@ -37,26 +40,25 @@ public class Node {
 	}
 
 	public synchronized boolean existCoins() {
-		return coins > 0;
+			return coins > 0;
 	}
 
 	public synchronized int getCoins() {
+			if (coins >= 3) {
+				coins -= 3;
+				return 3;
+			}
+			int quantity = coins;
+			coins = 0;
+			return quantity;
+	}
 
-		if (coins >= 3) {
-			coins -= 3;
-			return 3;
+	public synchronized boolean isDogOnNode(DogThread d) {
+		LOGGER.info("Dog in node = " + dog);
+		if(dog != null) {
+			LOGGER.info(getDog().equals(d));
 		}
-		int quantity = coins;
-		coins = 0;
-		return quantity;
-	}
-
-	public synchronized boolean isDogOnNode() {
-		return dogOnNode;
-	}
-
-	public synchronized void setDogOnNode(boolean dogOnNode) {
-		this.dogOnNode = dogOnNode;
+		return getDog() == null || getDog().equals(d);
 	}
 
 	public List<Node> getNexts() {
@@ -67,9 +69,15 @@ public class Node {
 		nexts.add(node);
 	}
 
-	@SuppressWarnings("deprecation")
 	public synchronized void addCoin() {
-		coins += 1;
-		sleepingDogs.forEach(d -> d.interrupt());
+			coins += 1;
+	}
+
+	public DogThread getDog() {
+		return dog;
+	}
+
+	public void setDog(DogThread dog) {
+		this.dog = dog;
 	}
 }
