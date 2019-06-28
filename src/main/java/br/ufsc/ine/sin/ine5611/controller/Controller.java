@@ -73,21 +73,4 @@ public class Controller {
 		}
 		helperThread.setRunning(false);
 	}
-
-	public void printState() {
-		while (!forest.lock());
-		for (Hunter hunter : hunters) {
-			LOGGER.info("Hunter " + hunter.getColor() + " with " + hunter.getCoins() + " coins");
-			LOGGER.info("Running thread " + hunter.getRunningDog().getBasicMessage() + " with " + hunter.getRunningDog().getCoins() + " coins");
-		}
-		LOGGER.info("Helper Thread is running? " + helperThread.isAlive());
-
-		Node[] nodes = forest.getNodes();
-		for (Node node : nodes) {
-			LOGGER.info("Node " + node.getId() + " with " + node.getCoins() + " coins and with dog "
-					+ ((node.getDog() == null) ? " null" : (node.getDog().getColor().name() + node.getDog().getId()))
-					+ " and sleeping dogs " + node.getSleepingDogs().size());
-		}
-		forest.unlock();
-	}
 }

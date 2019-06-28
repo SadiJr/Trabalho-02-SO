@@ -10,9 +10,9 @@ import br.ufsc.ine.sin.ine5611.thread.DogThread;
 public class Forest {
 	private static final Logger LOGGER = LogManager.getLogger(Forest.class);
 
-	ReentrantLock lock = new ReentrantLock();
-
 	private Node[] nodes;
+	private boolean helperThreadWorking;
+	private boolean dogThreadWorking;
 
 	public Forest() {
 		LOGGER.info("Criando nodos da floresta");
@@ -137,22 +137,31 @@ public class Forest {
 		}
 	}
 
-	public synchronized boolean lock() {
-		return lock.tryLock();
-	}
-
-	public synchronized void unlock() {
-		if (lock.isHeldByCurrentThread()) {
-			lock.unlock();
-			this.notifyAll();
+	public synchronized void run(boolean isHelperThread, DogThread dog) {
+		if (isHelperThread) {
+			setHelperThreadWorking(true);
+			while(isDogThreadWorking());
+			LOGGER.info("Helper thread entrou na seção crítica");
+			addCoinsToNode();
+			setHelperThreadWorking(false);
+		} else {
+			setDogThreadWorking(true);
+			while(isHelperThreadWorking());
+			if(dog.getNode().nodeOcuppedByAnotherDog(dog)) {
+				setDogThreadWorking(false);
+			} else {
+				if(dog.getNode().existCoins()) {
+					getCoins(dog.getNode(), dog);
+				} else {
+					dog.setSleeping(true);
+				}
+				setHelperThreadWorking(false);
+				this.notifyAll();
+			}
 		}
 	}
 
-	public boolean existsDogOnNode(Node node, DogThread dog) {
-		return node.isDogOnNode(dog);
-	}
-
-	public void getCoins(Node node, DogThread dog) {
+	public synchronized void getCoins(Node node, DogThread dog) {
 		String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
 		LOGGER.info(basicMessage + " acessou a região crítica!");
 		node.setDog(dog);
@@ -162,35 +171,34 @@ public class Forest {
 	}
 
 	public synchronized boolean moveDog(Node node, DogThread dog) {
-		synchronized (lock) {
-			String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
-			LOGGER.info(basicMessage + " acordou após sua soneca depois de pegar moedas");
-			int random = 0;
-			for (int i = 0; i < node.getNexts().size(); i++) {
-				random = (int) (Math.random() * node.getNexts().size());
-				if (node.getNexts().get(random).isDogOnNode(dog)) {
-					node.getNexts().get(random).setDog(dog);
-					node.setDog(null);
-					LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
-							+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
-					dog.setNode(node.getNexts().get(random));
-					node.getNexts().get(random).setDog(dog);
-					return true;
-				}
+		while (isHelperThreadWorking());
+		while(isDogThreadWorking());
+		setDogThreadWorking(true);
+		String basicMessage = "Cão " + dog.getColor().name() + " " + dog.getId();
+		LOGGER.info(basicMessage + " acordou após sua soneca depois de pegar moedas");
+		int random = 0;
+		for (int i = 0; i < node.getNexts().size(); i++) {
+			random = (int) (Math.random() * node.getNexts().size());
+			if (!node.getNexts().get(random).nodeOcuppedByAnotherDog(dog)) {
+				node.getNexts().get(random).setDog(dog);
+				node.setDog(null);
+				LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
+						+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
+				dog.setNode(node.getNexts().get(random));
+				node.getNexts().get(random).setDog(dog);
+				setDogThreadWorking(false);
+				return true;
 			}
-			return false;
 		}
-	}
-
-	public synchronized Node[] getNodes() {
-		return nodes;
+		setDogThreadWorking(false);
+		return false;
 	}
 
 	public Node getFirstNode() {
 		return nodes[0];
 	}
 
-	public void addCoinsToNode() {
+	public synchronized void addCoinsToNode() {
 		for (Node node : nodes) {
 			if (!node.existCoins()) {
 				LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
@@ -200,7 +208,7 @@ public class Forest {
 					node.getSleepingDogs().forEach(d -> {
 						LOGGER.info("Helper Thread encontrou cães dormindo no pote " + node.getId());
 						LOGGER.info("Cão dormindo = " + d.getBasicMessage());
-						d.setSleeping(false);
+						d.run();
 					});
 				}
 			}
@@ -211,7 +219,19 @@ public class Forest {
 		return node.existCoins();
 	}
 
-	public boolean verifyLock() {
-		return lock.isLocked();
+	public synchronized void setHelperThreadWorking(boolean helperThreadWorking) {
+		this.helperThreadWorking = helperThreadWorking;
+	}
+
+	public synchronized boolean isDogThreadWorking() {
+		return dogThreadWorking;
+	}
+
+	public synchronized void setDogThreadWorking(boolean dogThreadWorking) {
+		this.dogThreadWorking = dogThreadWorking;
+	}
+	
+	private synchronized boolean isHelperThreadWorking() {
+		return helperThreadWorking;
 	}
 }

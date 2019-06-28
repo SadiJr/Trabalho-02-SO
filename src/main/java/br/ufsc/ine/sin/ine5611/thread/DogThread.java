@@ -3,6 +3,8 @@ package br.ufsc.ine.sin.ine5611.thread;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.sun.swing.internal.plaf.basic.resources.basic;
+
 import br.ufsc.ine.sin.ine5611.enums.Color;
 import br.ufsc.ine.sin.ine5611.model.Forest;
 import br.ufsc.ine.sin.ine5611.model.Hunter;
@@ -32,6 +34,7 @@ public class DogThread extends Thread implements Runnable {
 		coins = 0;
 		setBasicMessage("Cão " + color.name() + " " + id);
 		this.forest = forest;
+		this.sleeping = false;
 	}
 
 	public long getId() {
@@ -46,7 +49,7 @@ public class DogThread extends Thread implements Runnable {
 		return coins;
 	}
 
-	public void addCoins(int quantity) {
+	public synchronized void addCoins(int quantity) {
 		LOGGER.info(getBasicMessage() + " encontrou " + quantity + " moedas no pote " + node.getId());
 		coins += quantity;
 		LOGGER.info(getBasicMessage() + " agora possuí " + coins + " moedas");
@@ -55,6 +58,7 @@ public class DogThread extends Thread implements Runnable {
 
 		if (coins >= 20) {
 			node.setDog(null);
+			forest.setHelperThreadWorking(false);
 			hunter.switchDogs();
 		}
 	}
@@ -63,80 +67,37 @@ public class DogThread extends Thread implements Runnable {
 	public void run() {
 		LOGGER.info(getBasicMessage() + " iniciando a caçada!");
 		while (running) {
-			if (forest.lock()) {
-				LOGGER.info("Lock with the thread " + getBasicMessage());
-
-				LOGGER.info(
-						"Verifiyng if exists god in node " + node.getId() + " = " + forest.existsDogOnNode(node, this));
-				if (forest.existsDogOnNode(node, this)) {
-					if (forest.existsCoins(node)) {
-						forest.getCoins(node, this);
-						if (running) {
-							forest.unlock();
-							try {
-								sleep(100);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-							if (running) {
-								boolean moving = true;
-								while (moving) {
-									if (forest.lock()) {
-										while (!forest.moveDog(node, this)) {
-											forest.unlock();
-											try {
-												sleep(1000);
-											} catch (InterruptedException e) {
-												e.printStackTrace();
-												return;
-											}
-										}
-										moving = false;
-										forest.unlock();
-									} else {
-										forest.unlock();
-										try {
-											sleep(1000);
-										} catch (InterruptedException e) {
-											e.printStackTrace();
-											return;
-										}
-									}
-								}
-							}
-							forest.unlock();
-							try {
-								sleep(100);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-						} else {
-							forest.unlock();
-						}
-					} else {
-						node.setDog(null);
-						node.addSleepingDog(this);
-						forest.unlock();
-						try {
-							while (sleeping)
-								sleep(1);
-						} catch (InterruptedException e) {
-							LOGGER.error(e, e);
-						}
-						LOGGER.info(basicMessage + " acordado pela HelperThread.");
-					}
-				} else {
-					forest.unlock();
-					try {
-						sleep(1000);
-					} catch (InterruptedException e) {
-						LOGGER.error(e, e);
-						Thread.currentThread().interrupt();
-					}
+			forest.run(false, this);
+			if (sleeping) {
+				try {
+					Thread.sleep(600);
+				} catch (InterruptedException e) {
+					LOGGER.error(basicMessage + " acordou", e);
+					continue;
 				}
 			}
+			sleeping = false;
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				LOGGER.error(e, e);
+			}
+
+			while (!forest.moveDog(node, this)) {
+
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException e) {
+					LOGGER.error(e, e);
+				}
+			}
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				LOGGER.error(e, e);
+			}
 		}
-		forest.unlock();
+		LOGGER.info("Deu ruim com a thread " + basicMessage);
 	}
 
 	public void setNode(Node node) {
@@ -165,5 +126,9 @@ public class DogThread extends Thread implements Runnable {
 
 	public void setBasicMessage(String basicMessage) {
 		this.basicMessage = basicMessage;
+	}
+
+	public Node getNode() {
+		return node;
 	}
 }

@@ -54,11 +54,11 @@ public class Node {
 			return quantity;
 	}
 
-	public synchronized boolean isDogOnNode(DogThread d) {
-		return getDog() == null || getDog().equals(d);
+	public synchronized boolean nodeOcuppedByAnotherDog(DogThread d) {
+		return getDog() != null && !getDog().equals(d);
 	}
 
-	public List<Node> getNexts() {
+	public synchronized List<Node> getNexts() {
 		return nexts;
 	}
 

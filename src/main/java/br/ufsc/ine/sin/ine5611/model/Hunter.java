@@ -72,7 +72,7 @@ public class Hunter {
 		}
 	}
 
-	public void verifyWinner(Node node) {
+	public synchronized void verifyWinner(Node node) {
 		if (getTotalCoins() >= 50) {
 			node.setDog(null);
 			controller.stopAll(this);
@@ -86,13 +86,8 @@ public class Hunter {
 			try {
 				dogThread.join();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LOGGER.error(e,e);
 			}
 		}
-	}
-
-	public void printState() {
-		controller.printState();
 	}
 }
