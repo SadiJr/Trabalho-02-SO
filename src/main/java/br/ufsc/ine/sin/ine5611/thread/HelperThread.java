@@ -23,7 +23,7 @@ public class HelperThread extends Thread implements Runnable {
 			forest.run(true, null);
 			try {
 				LOGGER.info("Helper Thread dormindo");
-				Thread.sleep(2000);
+				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				LOGGER.error(e,e);
 			}

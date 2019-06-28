@@ -46,42 +46,72 @@ public class Controller {
 		helperThread.start();
 	}
 
-	private void printWinners() {
-		LOGGER.info("Posições:" + "\n1º Colocado: Caçador " + first.getColor().name() + COM_UM_TOTAL_DE
+	private synchronized void printWinners() {
+		LOGGER.info("\n\n\n\n\nPosições:" + "\n1º Colocado: Caçador " + first.getColor().name() + COM_UM_TOTAL_DE
 				+ first.getTotalCoins() + MOEDAS + "\n2º Colocado: Caçador " + second.getColor().name()
 				+ COM_UM_TOTAL_DE + second.getTotalCoins() + MOEDAS + "\n3º Colocado: Caçador "
 				+ third.getColor().name() 
-				+ COM_UM_TOTAL_DE + third.getTotalCoins() + MOEDAS);
+				+ COM_UM_TOTAL_DE + third.getTotalCoins() + MOEDAS + "\n\n\n\n\n");
 	}
 
 	public synchronized void stopAll() {
+		LOGGER.info("Obtendo os colocados");
 		getWinners();
+		helperThread.setRunning(false);
+		helperThread.interrupt();
 		for (Hunter h : hunters) {
 			h.stopDogs();
 		}
-		helperThread.setRunning(false);
 		printWinners();
 	}
 
-	private void getWinners() {
-		int max = 0;
+	private synchronized void getWinners() {
+		int max = 49;
 		int med = 0;
-
+		
+		LOGGER.info("Iniciando a análise dos candidatos à 1º lugar");
+		
 		for (Hunter hunter : hunters) {
 			int totalCoins = hunter.getTotalCoins();
+			LOGGER.info("Caçador " + hunter.getColor().name() + " conseguiu " + totalCoins + " moedas");
 			if (totalCoins > max) {
 				max = totalCoins;
-				first = hunter;
+				if(first != null) {
+					if(second != null) {
+						if(second.getTotalCoins() < totalCoins) {
+							third = second;
+							second = hunter;
+						} else {
+							third = hunter;
+						}
+					} else {
+						second = first;
+					}
+				} else {
+					first = hunter;
+				}
+				LOGGER.info("1º Colocado é " + hunter.getColor().name());
 			} else if (totalCoins > med) {
 				med = totalCoins;
-				second = hunter;
+				if(second != null) {
+					if(second.getTotalCoins() > totalCoins) {
+						third = hunter;
+					} else {
+						third = second;
+						second = hunter;
+					}
+				} else {
+					second = hunter;
+				}
+				LOGGER.info("2º Colocado é " + hunter.getColor().name());
 			} else {
 				third = hunter;
+				LOGGER.info("3º Colocado é " + hunter.getColor().name());
 			}
 		}
 	}
 
-	public void setWinner(boolean b) {
+	public synchronized void setWinner(boolean b) {
 		this.winner = b;
 	}
 

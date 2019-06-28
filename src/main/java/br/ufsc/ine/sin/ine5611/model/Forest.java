@@ -144,9 +144,7 @@ public class Forest {
 		if (isHelperThread) {
 			setHelperThreadWorking(true);
 			if (isDogThreadWorking()) {
-				LOGGER.info(
-						"Helper Thread aguardando para entrar na seção crítica. Thread atualmente na seção crítica = "
-								+ dogInCriticalSection.getBasicMessage());
+				LOGGER.info("Helper Thread aguardando para entrar na seção crítica.");
 				return;
 			}
 			LOGGER.info("Helper thread entrou na seção crítica");
@@ -159,13 +157,13 @@ public class Forest {
 						+ isHelperThreadWorking() + " e outro cão na seção crítica = " + isDogThreadWorking());
 			}
 			setDogThreadWorking(true, dog);
-			dogInCriticalSection = dog;
-			LOGGER.info(dog.getBasicMessage() + " entrou na seção crítica");
+			setDogInCriticalSection(dog);
+			LOGGER.info(dog.getBasicMessage() + " entrou na seção crítica! Atualmente no pote " + dog.getNode().getId());
 
 			if (dog.getNode().nodeOcuppedByAnotherDog(dog)) {
 				LOGGER.info(dog.getBasicMessage()
 						+ " encontrou outro cão no pote! Saindo da seção crítica e liberando lock");
-				dogInCriticalSection = null;
+				setDogInCriticalSection(null);
 				setDogThreadWorking(false, dog);
 			} else {
 				if (dog.getNode().existCoins()) {
@@ -180,6 +178,7 @@ public class Forest {
 					return;
 				}
 				setDogThreadWorking(false, dog);
+				setDogInCriticalSection(null);
 			}
 			LOGGER.info("Relatório do " + dog.getBasicMessage() + ": Helper Thread na seção crítica = "
 					+ isHelperThreadWorking() + " e outro cão na seção crítica = " + isDogThreadWorking());
@@ -194,7 +193,7 @@ public class Forest {
 		while (isHelperThreadWorking() && isDogThreadWorking())
 			;
 		setDogThreadWorking(true, dog);
-		dogInCriticalSection = dog;
+		setDogInCriticalSection(dog);
 		LOGGER.info(dog.getBasicMessage() + " acordou após sua soneca depois de pegar moedas");
 		int random = 0;
 		for (int i = 0; i < node.getNexts().size(); i++) {
@@ -235,7 +234,7 @@ public class Forest {
 						LOGGER.info("Cão dormindo = " + d.getBasicMessage());
 						d.interrupt();
 						sleepingDogsToRemove.add(d);
-						
+
 					});
 					node.removSleepingDog(sleepingDogsToRemove);
 				}
@@ -256,11 +255,20 @@ public class Forest {
 	}
 
 	public synchronized void setDogThreadWorking(boolean dogThreadWorking, DogThread dog) {
-		LOGGER.info(dog.getBasicMessage() + " alterando valor do lock global dos cães de " + this.dogThreadWorking + " para " + dogThreadWorking);
+		LOGGER.info(dog.getBasicMessage() + " alterando valor do lock global dos cães de " + this.dogThreadWorking
+				+ " para " + dogThreadWorking);
 		this.dogThreadWorking = dogThreadWorking;
 	}
 
 	private synchronized boolean isHelperThreadWorking() {
 		return helperThreadWorking;
+	}
+
+	public DogThread getDogInCriticalSection() {
+		return dogInCriticalSection;
+	}
+
+	public void setDogInCriticalSection(DogThread dogInCriticalSection) {
+		this.dogInCriticalSection = dogInCriticalSection;
 	}
 }

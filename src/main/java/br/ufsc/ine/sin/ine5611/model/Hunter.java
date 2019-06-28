@@ -35,50 +35,40 @@ public class Hunter {
 		LOGGER.info("Caçador " + color.name() + " com um total de " + coins);
 		runningDog.setRunning(false);
 		runningDog.setSleeping(false);
+		forest.setDogInCriticalSection(null);
 		runningDog.interrupt();
-
-		printStateOfThreadsAfter();
 
 		LOGGER.info("Variável runningDog é " + runningDog.getBasicMessage());
 		if (dogs[0].equals(runningDog)) {
+//			Cachorro que deve entrar = dog[1]
 			LOGGER.info("Substituindo " + runningDog.getBasicMessage() + " por " + dogs[1].getBasicMessage());
 			LOGGER.info(dogs[1].getBasicMessage() + " entrando no bosque");
-			runningDog = dogs[1];
-			LOGGER.info("Estado da Thread " + runningDog.getBasicMessage() + " depois da troca de contexto:\nRunning -> "
-					+ runningDog.isRunning() + "; Alive -> " + runningDog.isAlive() + "; Interrupted -> "
-					+ runningDog.isInterrupted() + "; State -> " + runningDog.getState() + "\n");
-			if (runningDog.getState().equals(State.NEW))
-				runningDog.start();
-
-			if (runningDog.getState().equals(State.TERMINATED)) {
-				dogs[1] = new DogThread(1, color, this, forest);
-				dogs[1].setRunning(true);
-				dogs[1].setSleeping(false);
-				runningDog = dogs[1];
-				runningDog.start();
+			if (dogs[1].getState().equals(State.NEW)) {
+				LOGGER.info("Iniciando thread " + dogs[1].getBasicMessage());
+				dogs[1].start();
+			} else {
+				dogs[1] = new DogThread(2, color, this, forest);
+				dogs[1].setNode(forest.getFirstNode());
+				dogs[1].start();
 			}
+			LOGGER.info("Estado da Thread " + dogs[1].getBasicMessage() + " depois da troca de contexto:\nRunning -> "
+					+ dogs[1].isRunning() + "; Alive -> " + dogs[1].isAlive() + "; Interrupted -> "
+					+ dogs[1].isInterrupted() + "; State -> " + dogs[1].getState() + "\n");
 		} else {
 			LOGGER.info("Substituindo " + runningDog.getBasicMessage() + " por " + dogs[0].getBasicMessage());
 			LOGGER.info(dogs[0].getBasicMessage() + " entrando no bosque");
-			LOGGER.info("Estado da Thread " + runningDog.getBasicMessage() + " depois da troca de contexto:\nRunning -> "
-					+ runningDog.isRunning() + "; Alive -> " + runningDog.isAlive() + "; Interrupted -> "
-					+ runningDog.isInterrupted() + "; State -> " + runningDog.getState() + "\n");
 			if (dogs[0].getState().equals(State.NEW)) {
 				LOGGER.info("Iniciando thread " + dogs[0].getBasicMessage());
 				dogs[0].start();
-			}
-
-			if (runningDog.getState().equals(State.TERMINATED)) {
-				dogs[0] = new DogThread(2, color, this, forest);
-				dogs[0].setRunning(true);
-				dogs[0].setSleeping(false);
+			} else {
+				dogs[0] = new DogThread(1, color, this, forest);
+				dogs[0].setNode(forest.getFirstNode());
 				dogs[0].start();
-				runningDog = dogs[0];
 			}
-			runningDog = dogs[0];
+			LOGGER.info("Estado da Thread " + dogs[0].getBasicMessage() + " depois da troca de contexto:\nRunning -> "
+					+ dogs[0].isRunning() + "; Alive -> " + dogs[0].isAlive() + "; Interrupted -> "
+					+ dogs[0].isInterrupted() + "; State -> " + dogs[0].getState() + "\n");
 		}
-		LOGGER.info("Variável runningDog agora é " + runningDog.getBasicMessage());
-		printStateOfThreadBefore();
 	}
 
 	private void printStateOfThreadBefore() {
@@ -120,11 +110,10 @@ public class Hunter {
 		}
 	}
 
-	public synchronized boolean verifyWinner(Node node) {
+	public synchronized boolean verifyWinner() {
 		if (getTotalCoins() >= 50) {
-			LOGGER.info("Temos um vencedor!");
+			LOGGER.info("Temos um vencedor! Que é o caçador " + color.name() + " com um total de " + getTotalCoins());
 			controller.setWinner(true);
-			node.setDog(null);
 			controller.stopAll();
 		}
 		return controller.getWinner();
@@ -134,18 +123,12 @@ public class Hunter {
 		for (DogThread dogThread : dogs) {
 			dogThread.setRunning(false);
 			dogThread.setSleeping(false);
-			forest.setDogThreadWorking(false, dogThread);
 			dogThread.interrupt();
-			try {
-				dogThread.join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 		}
+		
 	}
 
-	public boolean existsWinner() {
+	public synchronized boolean existsWinner() {
 		return controller.getWinner();
 	}
 
@@ -155,5 +138,9 @@ public class Hunter {
 
 	public DogThread[] getDogs() {
 		return dogs;
+	}
+
+	public synchronized void setRunningDog(DogThread dogThread) {
+		this.runningDog = dogThread;
 	}
 }
