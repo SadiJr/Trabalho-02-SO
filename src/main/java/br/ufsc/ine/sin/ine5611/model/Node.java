@@ -3,13 +3,9 @@ package br.ufsc.ine.sin.ine5611.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import br.ufsc.ine.sin.ine5611.thread.DogThread;
 
 public class Node {
-	private static final Logger LOGGER = LogManager.getLogger(Node.class);
 	private int id;
 	private int coins;
 	private List<DogThread> sleepingDogs;
@@ -76,5 +72,10 @@ public class Node {
 
 	public synchronized DogThread getDog() {
 		return dog;
+	}
+
+
+	public synchronized void removSleepingDog(List<DogThread> sleepingDogsToRemove) {
+		sleepingDogs.removeAll(sleepingDogsToRemove);
 	}
 }

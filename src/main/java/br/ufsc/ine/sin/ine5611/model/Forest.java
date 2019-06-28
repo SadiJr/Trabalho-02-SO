@@ -1,5 +1,8 @@
 package br.ufsc.ine.sin.ine5611.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -171,11 +174,12 @@ public class Forest {
 					LOGGER.info(dog.getBasicMessage() + " não encontrou nenhuma moeda no pote " + dog.getNode().getId()
 							+ "! Saindo da seção crítica e liberando lock");
 					dog.setSleeping(true);
+					dog.getNode().setDog(null);
+					dog.getNode().addSleepingDog(dog);
+					setDogThreadWorking(false, dog);
+					return;
 				}
 				setDogThreadWorking(false, dog);
-				LOGGER.info(dog.getBasicMessage()
-						+ " dormindo após ter pegado as moedas. Estado das Threads Helper Thread na seção crítica = "
-						+ isHelperThreadWorking() + " e outro cão na seção crítica = " + isDogThreadWorking());
 			}
 			LOGGER.info("Relatório do " + dog.getBasicMessage() + ": Helper Thread na seção crítica = "
 					+ isHelperThreadWorking() + " e outro cão na seção crítica = " + isDogThreadWorking());
@@ -200,7 +204,7 @@ public class Forest {
 				node.setDog(null);
 				LOGGER.info("Cão " + dog.getColor().name() + " " + dog.getId() + " dormindo após saltar do pote "
 						+ node.getId() + " para o pote " + node.getNexts().get(random).getId());
-				LOGGER.info(dog.getBasicMessage() + " setando pote " + node.getNexts().get(random)
+				LOGGER.info(dog.getBasicMessage() + " setando pote " + node.getNexts().get(random).getId()
 						+ " para si. O pote possuí atualmente o cão"
 						+ (node.getNexts().get(random).getDog() == null ? "null"
 								: node.getNexts().get(random).getDog().getBasicMessage()));
@@ -220,17 +224,20 @@ public class Forest {
 
 	public synchronized void addCoinsToNode() {
 		for (Node node : nodes) {
-			LOGGER.info("Helper Thread verificando pote " + node.getId());
 			if (!node.existCoins()) {
 				LOGGER.info("Encontrado um pote vazio (" + node.getId() + ")! Adicionando uma moeda nele");
 				node.addCoin();
 
+				List<DogThread> sleepingDogsToRemove = new ArrayList<>();
 				if (node.verifyExistsSleepingDogs()) {
 					node.getSleepingDogs().forEach(d -> {
 						LOGGER.info("Helper Thread encontrou cães dormindo no pote " + node.getId());
 						LOGGER.info("Cão dormindo = " + d.getBasicMessage());
-						d.start();
+						d.interrupt();
+						sleepingDogsToRemove.add(d);
+						
 					});
+					node.removSleepingDog(sleepingDogsToRemove);
 				}
 			}
 		}

@@ -1,5 +1,7 @@
 package br.ufsc.ine.sin.ine5611.model;
 
+import java.lang.Thread.State;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -26,26 +28,72 @@ public class Hunter {
 		runningDog = dogs[0];
 	}
 
-	public void switchDogs() {
+	public synchronized void switchDogs() {
 		LOGGER.info(runningDog.getBasicMessage() + " entregando moedas ao dono");
 		coins += runningDog.getCoins();
-		
+
 		LOGGER.info("Caçador " + color.name() + " com um total de " + coins);
+		runningDog.setRunning(false);
+		runningDog.setSleeping(false);
+		runningDog.interrupt();
+
+		printStateOfThreadsAfter();
+
+		LOGGER.info("Variável runningDog é " + runningDog.getBasicMessage());
 		if (dogs[0].equals(runningDog)) {
-			runningDog.setRunning(false);
-			runningDog.setSleeping(false);
+			LOGGER.info("Substituindo " + runningDog.getBasicMessage() + " por " + dogs[1].getBasicMessage());
+			LOGGER.info(dogs[1].getBasicMessage() + " entrando no bosque");
 			runningDog = dogs[1];
-			LOGGER.info(runningDog.getBasicMessage() + " entrando no bosque");
-			runningDog.setRunning(true);
-			runningDog.start();
+			LOGGER.info("Estado da Thread " + runningDog.getBasicMessage() + " depois da troca de contexto:\nRunning -> "
+					+ runningDog.isRunning() + "; Alive -> " + runningDog.isAlive() + "; Interrupted -> "
+					+ runningDog.isInterrupted() + "; State -> " + runningDog.getState() + "\n");
+			if (runningDog.getState().equals(State.NEW))
+				runningDog.start();
+
+			if (runningDog.getState().equals(State.TERMINATED)) {
+				dogs[1] = new DogThread(1, color, this, forest);
+				dogs[1].setRunning(true);
+				dogs[1].setSleeping(false);
+				runningDog = dogs[1];
+				runningDog.start();
+			}
 		} else {
-			runningDog.setRunning(false);
-			runningDog.setSleeping(false);
+			LOGGER.info("Substituindo " + runningDog.getBasicMessage() + " por " + dogs[0].getBasicMessage());
+			LOGGER.info(dogs[0].getBasicMessage() + " entrando no bosque");
+			LOGGER.info("Estado da Thread " + runningDog.getBasicMessage() + " depois da troca de contexto:\nRunning -> "
+					+ runningDog.isRunning() + "; Alive -> " + runningDog.isAlive() + "; Interrupted -> "
+					+ runningDog.isInterrupted() + "; State -> " + runningDog.getState() + "\n");
+			if (dogs[0].getState().equals(State.NEW)) {
+				LOGGER.info("Iniciando thread " + dogs[0].getBasicMessage());
+				dogs[0].start();
+			}
+
+			if (runningDog.getState().equals(State.TERMINATED)) {
+				dogs[0] = new DogThread(2, color, this, forest);
+				dogs[0].setRunning(true);
+				dogs[0].setSleeping(false);
+				dogs[0].start();
+				runningDog = dogs[0];
+			}
 			runningDog = dogs[0];
-			LOGGER.info(runningDog.getBasicMessage() + " entrando no bosque");
-			runningDog.setRunning(true);
-			runningDog.setSleeping(false);
-			runningDog.run();
+		}
+		LOGGER.info("Variável runningDog agora é " + runningDog.getBasicMessage());
+		printStateOfThreadBefore();
+	}
+
+	private void printStateOfThreadBefore() {
+		for (DogThread dogThread : dogs) {
+			LOGGER.warn("Estado da Thread " + dogThread.getBasicMessage() + " depois da troca de contexto:\nRunning -> "
+					+ dogThread.isRunning() + "; Alive -> " + dogThread.isAlive() + "; Interrupted -> "
+					+ dogThread.isInterrupted() + "; State -> " + dogThread.getState() + "\n");
+		}
+	}
+
+	private void printStateOfThreadsAfter() {
+		for (DogThread dogThread : dogs) {
+			LOGGER.warn("Estado da Thread " + dogThread.getBasicMessage() + " antes da troca de contexto:\nRunning -> "
+					+ dogThread.isRunning() + "; Alive -> " + dogThread.isAlive() + "; Interrupted -> "
+					+ dogThread.isInterrupted() + "; State -> " + dogThread.getState() + "\n");
 		}
 	}
 
@@ -72,22 +120,40 @@ public class Hunter {
 		}
 	}
 
-	public synchronized void verifyWinner(Node node) {
+	public synchronized boolean verifyWinner(Node node) {
 		if (getTotalCoins() >= 50) {
+			LOGGER.info("Temos um vencedor!");
+			controller.setWinner(true);
 			node.setDog(null);
-			controller.stopAll(this);
+			controller.stopAll();
 		}
+		return controller.getWinner();
 	}
 
-	public void stopDogs() {
+	public synchronized void stopDogs() {
 		for (DogThread dogThread : dogs) {
 			dogThread.setRunning(false);
 			dogThread.setSleeping(false);
+			forest.setDogThreadWorking(false, dogThread);
+			dogThread.interrupt();
 			try {
 				dogThread.join();
 			} catch (InterruptedException e) {
-				LOGGER.error(e,e);
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
+	}
+
+	public boolean existsWinner() {
+		return controller.getWinner();
+	}
+
+	public synchronized void printState() {
+//		controller.printState();
+	}
+
+	public DogThread[] getDogs() {
+		return dogs;
 	}
 }

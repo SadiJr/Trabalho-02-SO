@@ -2,9 +2,6 @@ package br.ufsc.ine.sin.ine5611.thread;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.log4j.pattern.LogEvent;
-
-import com.sun.swing.internal.plaf.basic.resources.basic;
 
 import br.ufsc.ine.sin.ine5611.enums.Color;
 import br.ufsc.ine.sin.ine5611.model.Forest;
@@ -36,6 +33,7 @@ public class DogThread extends Thread implements Runnable {
 		setBasicMessage("Cão " + color.name() + " " + id);
 		this.forest = forest;
 		this.sleeping = false;
+		this.running = true;
 	}
 
 	public long getId() {
@@ -55,53 +53,64 @@ public class DogThread extends Thread implements Runnable {
 		coins += quantity;
 		LOGGER.info(getBasicMessage() + " agora possuí " + coins + " moedas");
 
-		hunter.verifyWinner(node);
-
-		if (coins >= 20) {
-			node.setDog(null);
-			forest.setHelperThreadWorking(false);
-			hunter.switchDogs();
+		if (!hunter.verifyWinner(node) && coins >= 20) {
+				node.setDog(null);
+				hunter.switchDogs();
 		}
 	}
 
 	@Override
 	public void run() {
-		LOGGER.info(getBasicMessage() + " iniciando a caçada!");
+		LOGGER.info(getBasicMessage() + " iniciando a caçada! Status da thread " + getState());
 		while (running) {
 			forest.run(false, this);
 			if (sleeping) {
 				try {
 					LOGGER.info(basicMessage + " dormindo por não ter encontrado nenhuma moeda no pote");
-					Thread.sleep(1000);
+					sleep(6000);
 				} catch (InterruptedException e) {
-					LOGGER.error(basicMessage + " acordou", e);
+					LOGGER.error(basicMessage + " foi acordado pela Thread Helper", e);
 					sleeping = false;
 					continue;
 				}
 			}
 			try {
-				LOGGER.info(basicMessage + " domindo"); 
-				Thread.sleep(200);
+				LOGGER.info(basicMessage + " dormindo");
+				sleep(2000);
 			} catch (InterruptedException e) {
-				LOGGER.error(e, e);
+				if(hunter.existsWinner()) {
+					LOGGER.info(basicMessage + " foi acordado para encerrar, uma vez que já existe vencedor. Running = " + running);
+					continue;
+				}
+				hunter.printState();
+				LOGGER.error(basicMessage + " teve seu sono interrompido!", e);
 			}
-
+			if(!running) {
+				LOGGER.info(basicMessage + "Troca de contexto de threads. Running = " + running);
+				continue;
+			}
+			
 			while (!forest.moveDog(node, this)) {
 				try {
 					LOGGER.info(basicMessage + " dormindo por não conseguir saltar para outro pote");
-					Thread.sleep(200);
+					sleep(2000);
 				} catch (InterruptedException e) {
+					if(hunter.existsWinner())
+						continue;
 					LOGGER.error(e, e);
 				}
 			}
 			try {
 				LOGGER.info(basicMessage + " dormindo após conseguir saltar para outro pote");
-				Thread.sleep(200);
+				sleep(2000);
 			} catch (InterruptedException e) {
+				if(hunter.existsWinner())
+					continue;
 				LOGGER.error(e, e);
 			}
 		}
 		LOGGER.info("Deu ruim com a thread " + basicMessage);
+		hunter.printState();
 	}
 
 	public void setNode(Node node) {
