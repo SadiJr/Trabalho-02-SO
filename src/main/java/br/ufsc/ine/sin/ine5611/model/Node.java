@@ -55,7 +55,7 @@ public class Node {
 	}
 
 	public synchronized boolean nodeOcuppedByAnotherDog(DogThread d) {
-		return getDog() != null && !getDog().equals(d);
+		return dog != null && !dog.equals(d);
 	}
 
 	public synchronized List<Node> getNexts() {
@@ -70,11 +70,11 @@ public class Node {
 			coins += 1;
 	}
 
-	public DogThread getDog() {
-		return dog;
+	public synchronized void setDog(DogThread dog) {
+		this.dog = dog;
 	}
 
-	public void setDog(DogThread dog) {
-		this.dog = dog;
+	public synchronized DogThread getDog() {
+		return dog;
 	}
 }

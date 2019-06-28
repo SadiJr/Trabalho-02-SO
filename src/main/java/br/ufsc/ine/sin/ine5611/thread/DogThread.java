@@ -2,6 +2,7 @@ package br.ufsc.ine.sin.ine5611.thread;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.pattern.LogEvent;
 
 import com.sun.swing.internal.plaf.basic.resources.basic;
 
@@ -70,28 +71,31 @@ public class DogThread extends Thread implements Runnable {
 			forest.run(false, this);
 			if (sleeping) {
 				try {
-					Thread.sleep(600);
+					LOGGER.info(basicMessage + " dormindo por não ter encontrado nenhuma moeda no pote");
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					LOGGER.error(basicMessage + " acordou", e);
+					sleeping = false;
 					continue;
 				}
 			}
-			sleeping = false;
 			try {
+				LOGGER.info(basicMessage + " domindo"); 
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				LOGGER.error(e, e);
 			}
 
 			while (!forest.moveDog(node, this)) {
-
 				try {
+					LOGGER.info(basicMessage + " dormindo por não conseguir saltar para outro pote");
 					Thread.sleep(200);
 				} catch (InterruptedException e) {
 					LOGGER.error(e, e);
 				}
 			}
 			try {
+				LOGGER.info(basicMessage + " dormindo após conseguir saltar para outro pote");
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				LOGGER.error(e, e);

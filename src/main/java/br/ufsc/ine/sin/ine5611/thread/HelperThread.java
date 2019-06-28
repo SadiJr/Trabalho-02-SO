@@ -22,6 +22,7 @@ public class HelperThread extends Thread implements Runnable {
 			LOGGER.info("Iniciando verificação de potes vazios");
 			forest.run(true, null);
 			try {
+				LOGGER.info("Helper Thread dormindo");
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				LOGGER.error(e,e);
