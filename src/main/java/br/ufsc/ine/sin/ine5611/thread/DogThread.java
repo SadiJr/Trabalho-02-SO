@@ -8,7 +8,7 @@ import br.ufsc.ine.sin.ine5611.model.Forest;
 import br.ufsc.ine.sin.ine5611.model.Hunter;
 import br.ufsc.ine.sin.ine5611.model.Node;
 
-public class DogThread extends Thread implements Runnable {
+public class DogThread extends Thread {
 	private static final Logger LOGGER = LogManager.getLogger(DogThread.class);
 
 	private int id;
